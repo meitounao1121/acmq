@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="com.zj.activemq"></context:component-scan>
+<!--    &lt;!&ndash; 真正可以产生Connection的ConnectionFactory，由对应的 JMS服务厂商提供&ndash;&gt;
+    <bean id="targetConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://192.168.75.14:61616"/>
+    </bean>
+    &lt;!&ndash; Spring用于管理真正的ConnectionFactory的ConnectionFactory &ndash;&gt;
+    <bean id="connectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        &lt;!&ndash; 目标ConnectionFactory对应真实的可以产生JMS Connection的ConnectionFactory &ndash;&gt;
+        <property name="targetConnectionFactory" ref="targetConnectionFactory"/>
+    </bean>
+    &lt;!&ndash; Spring提供的JMS工具类，它可以进行消息发送、接收等 &ndash;&gt;
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        &lt;!&ndash; 这个connectionFactory对应的是我们定义的Spring提供的那个ConnectionFactory对象 &ndash;&gt;
+        <property name="connectionFactory" ref="connectionFactory"/>
+    </bean>
+    &lt;!&ndash;这个是队列目的地，点对点的  文本信息&ndash;&gt;
+    <bean id="queueTextDestination" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="queue_text"/>
+    </bean>-->
+
+    <bean id="jmsFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="tcp://49.235.12.65:61616"/>
+            </bean>
+        </property>
+        <property name="maxConnections" value="100"/>
+    </bean>
+
+    <bean id="destinationQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg index="0" value="spring-active-queue"/>
+    </bean>
+
+    <bean id="destinationTopic" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg index="0" value="spring-active-topic"/>
+    </bean>
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="jmsFactory"/>
+        <property name="defaultDestination" ref="destinationTopic"/>
+        <property name="messageConverter">
+            <bean class="org.springframework.jms.support.converter.SimpleMessageConverter"/>
+        </property>
+    </bean>
+    <bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="jmsFactory"/>
+        <property name="destination" ref="destinationTopic"/>
+        <property name="messageListener" ref="myMessageListener"/>
+    </bean>
+</beans>
